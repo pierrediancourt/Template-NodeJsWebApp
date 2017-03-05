@@ -1,0 +1,26 @@
+<!-- Minified JQuery -->
+<!-- Minified bootstrap JS -->
+<!-- Added to page as a json array -->
+{{addJs '[
+	"https://code.jquery.com/jquery-3.1.1.min.js",
+	"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+]'}}
+
+<!-- Minified Lazy Load jquery -->
+<!-- Added to page as a string -->
+{{addJs "https://cdnjs.cloudflare.com/ajax/libs/jquery_lazyload/1.9.7/jquery.lazyload.min.js"}}
+
+<!-- Minified bootstrap CSS -->
+<!-- Optional bootstrap theme -->
+<!-- Added to page as two independant strings -->
+{{addCss "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"}}
+{{addCss "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"}}
+
+
+<h3>Check the source code of this page</h3>
+<h5>To see that we inserted some js and css dependancies dynamically in this page</h5>
+
+<img style="width:100%" src="/img/landscape.jpg">
+
+<br>
+<a href="/sample/menu" >Go back to sample menu</a>

@@ -1,5 +1,0 @@
-#FEDE58 : yellow
-
-#AB58FE : violet			=> #5901b2 (35%)
-
-#FE5881 : rouge/bordeaux 	=> b2012d (35%)

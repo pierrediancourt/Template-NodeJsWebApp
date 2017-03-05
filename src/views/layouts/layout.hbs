@@ -2,13 +2,12 @@
 <html lang="en">
   <head>
     <title>MyApp - {{title}}</title>
-    <link rel="stylesheet" type="text/css" href="/css/style.css">
+    {{> cssPartial cssUrls=cssUrls}}
   </head>
 
   <body>
-  	{{> flashMessagesPartial flashMessages=flashMessages}}
-  	
     <div class=container>
+    {{> flashMessagesPartial flashMessages=flashMessages}}
     {{{body}}}
     </div>
 

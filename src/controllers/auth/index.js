@@ -58,10 +58,11 @@ function defineRouting (app) {
 	app.post('/auth/login', postLogin)
 
 	app.get('/auth/logout', function(req, res){
-		req.logout()
+		logger.info("User logged out : " +req.session.passport.user)
+		req.logout()		
 		req.flash('success', 'You have been successfully logged out')
 		res.redirect('/auth/login')
-	});
+	})
 
 	app.get('/auth/register', renderRegister)
 	app.post('/auth/register', postRegister)
@@ -88,6 +89,7 @@ function postLogin (req, res, next){
 	    	  	logger.error("Log in error : " +error)
 	    	  	return next(error) // will generate a 500 error ?
 	    	}
+	    	logger.info("User logged in : " +user)
 	    	req.flash('success', 'You have been successfully logged in')
 	    	return res.redirect('/user/profile')
     	})

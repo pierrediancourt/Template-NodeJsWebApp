@@ -22,6 +22,10 @@ app.use(bodyParser.urlencoded({
   extended: false
 }))
 app.use(bodyParser.json())
+//setting default route below
+app.get('/', function (req, res) {
+    res.redirect('/auth/login');
+})
 
 var server = http.createServer(app)
   , gameServer = new colyseus.Server({server: server})
