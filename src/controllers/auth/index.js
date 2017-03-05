@@ -1,68 +1,70 @@
 "use strict";
 
+//global.Promise = require('q')
+const Q = require('q')
+const logger = require('winston')
+const bcrypt = require('bcrypt')
 const passport = require('passport')
 const LocalStrategy = require('passport-local').Strategy
 const authenticationMiddleware = require('./middleware')
 
-const user = { //fake user object normally coming from database
-  username: 'user',
-  password: 'password',
-  id: 1
-}
+//private global properties
+var repositories
 
-function findUser (username, callback) { //should lookup in a database to find the user object
-  if (username === user.username) {
-    return callback(null, user)
-  }
-  return callback(null)
-}
-
-passport.serializeUser(function (user, cb) {
-  cb(null, user.username)
+//called when setting username to session to authenticate the user
+passport.serializeUser(function (user, done) {
+	done(null, user.username)
 })
 
-passport.deserializeUser(function (username, cb) {
-  findUser(username, cb)
+//called when checking username in session to verify the user authentication
+passport.deserializeUser(function (username, done) {
+	repositories.userRepository.findUser(username).nodeify(done)
 })
 
-function initAuthController(app) {
-  passport.use(new LocalStrategy(
-    function(username, password, done) {
-      findUser(username, function (err, user) {
-        if (err) {
-          return done(err) //failed authentication because the user lookup in database failed
-        }
-        if (!user) {
-          console.log("user not found")
-          return done(null, false, { message: 'Incorrect username or password'}) //failed authentication because we didn't find the user in database 
-        }
-        if (password !== user.password  ) {
-          console.log("wrong password")
-          return done(null, false, { message: 'Incorrect username or password'}) //failed authentication, password is wrong
-        }
-        return done(null, user) //returning the user to passport, notifying it that we finished our checks and that the user is successfully authenticated
-      })
-    }
-  ))
+function initAuthController(app, repos) {
+	repositories = repos
+    passport.use(new LocalStrategy(
+	    function(username, password, done) {
+	    	var userFromDb
+	    	repositories.userRepository.findUser(username)
+		    .then(function(user) {
+		        if (!user) {
+		        	logger.info("User tried to log in with wrong username")
+		        	throw "Incorrect username or password" //failed authentication because we didn't find the user in database 
+		        }
+		        userFromDb = user
+		        return bcrypt.compare(password, user.password)
+		    })
+		    .then(function(arePasswordsMatching) {
+				if (arePasswordsMatching) {
+					return userFromDb;
+				}
+				else {
+					logger.info("User tried to log in with wrong password")
+					throw "Incorrect username or password" //failed authentication, password is wrong
+				}
+		    })
+		    .nodeify(done)
+	    }
+    ))
 
-  passport.authenticationMiddleware = authenticationMiddleware
+	passport.authenticationMiddleware = authenticationMiddleware
 
-  defineRouting(app)
+	defineRouting(app)
 }
 
 function defineRouting (app) {
-  app.get('/auth/login', renderLogin)
-  app.post('/auth/login', passport.authenticate('local', {
-    successRedirect: '/user/profile',
-    failureRedirect: '/auth/login',
-    failureFlash: true 
-  }))
+	app.get('/auth/login', renderLogin)
+	app.post('/auth/login', postLogin)
 
-  app.get('/auth/logout', function(req, res){
-    req.logout();
-    req.flash('success', 'You have been successfully logged out.')
-    res.redirect('/auth/login');
-  });
+	app.get('/auth/logout', function(req, res){
+		req.logout()
+		req.flash('success', 'You have been successfully logged out')
+		res.redirect('/auth/login')
+	});
+
+	app.get('/auth/register', renderRegister)
+	app.post('/auth/register', postRegister)
 }
 
 function renderLogin (req, res) {  
@@ -70,6 +72,65 @@ function renderLogin (req, res) {
     title: 'Login',
     flashMessages: req.flash()
   })
+}
+
+function postLogin (req, res, next){
+	passport.authenticate('local', function(error, user, info) {
+		logger.verbose("Authentication infos : " +info)
+		//if error is set user is null 
+	    if (error && !user) {
+	    	req.flash('error', error) 
+	    	return res.redirect('/auth/login')
+	    }
+
+	    req.login(user, error => {
+	    	if (error) {
+	    	  	logger.error("Log in error : " +error)
+	    	  	return next(error) // will generate a 500 error ?
+	    	}
+	    	req.flash('success', 'You have been successfully logged in')
+	    	return res.redirect('/user/profile')
+    	})
+	})(req, res, next)
+}
+
+function renderRegister (req, res) {
+	res.render('auth/register', {
+		title: 'Register',
+		flashMessages: req.flash()
+	})
+}
+
+function postRegister (req, res) {
+	if(!req.body.username
+	|| !req.body.password
+	|| !req.body.passwordConfirm){
+		req.flash('error', 'Please fill all the forms')
+		res.redirect('/auth/register')
+	}
+
+	if(req.body.password != req.body.passwordConfirm){
+		req.flash('error', 'Password fields must match')
+		res.redirect('/auth/register')
+	}
+
+	bcrypt.genSalt(10, function(err, salt) {
+		bcrypt.hash(req.body.password, salt, function(err, hash) {
+			var user = { "username" : req.body.username, "password" : hash, "language" : "fr" }
+			repositories.userRepository.insertUser(user).then(function(){
+			    //success
+			    logger.info("Registered user : " +user+ " with success")
+				req.flash('success', 'You have been registered')		
+			}, function(error){
+			    //error
+			    logger.error("Registered user : " +user+ " with error : " + error)
+			    req.flash('error', 'Service unavailable')
+			}).fin(function(){
+			    //finally (executed after error or success)
+			    res.redirect('/auth/login')
+			}).done()
+		})
+	})
 }
 
 module.exports = initAuthController
