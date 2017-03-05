@@ -10,15 +10,15 @@ function init(app){
 	  defaultLayout: 'layout',
 	  extname: '.hbs',
 	  helpers: require('./helpers').helpers,
-	  layoutsDir: path.join(__dirname, "../../public/views/layouts"),
-	  partialsDir: path.join(__dirname, "../../public/views/partials")
+	  layoutsDir: path.join(__dirname, "../views/layouts"),
+	  partialsDir: path.join(__dirname, "../views/partials")
 	})
 
 	//configure handlebars files as default templating/render engine
 	app.engine('.hbs', hbs)
 
 	app.set('view engine', '.hbs')
-	app.set('views', path.join(__dirname, "../../public/views"))
+	app.set('views', path.join(__dirname, "../views"))
 }
 
 module.exports = init

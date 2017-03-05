@@ -2,7 +2,12 @@
 
 const passport = require('passport')
 
-function initLobbyController(app){
+//private global properties
+var repositories
+
+function initLobbyController(app, repos){
+	repositories = repos
+	
 	defineRouting(app)
 }
 
