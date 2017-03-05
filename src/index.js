@@ -1,7 +1,6 @@
 "use strict";
 
 const path = require('path')
-const colyseus = require('colyseus')
 const http = require('http')
 const express = require('express')
 
@@ -11,10 +10,8 @@ const cookieParser = require('cookie-parser')
 const config = require('../config')
 const logger = require('winston')
 
-logger.info(`Will start app in '${config.env}' mode on port '${config.server.port}'`, { pid: process.pid })
-
-
 const app = express()
+logger.info(`Will start app in '${config.env}' mode on port '${config.server.port}'`, { pid: process.pid })
 
 app.use(express.static(path.join(__dirname, "../public")))
 app.use(cookieParser('secretSigningString'))
@@ -28,9 +25,6 @@ app.get('/', function (req, res) {
 })
 
 var server = http.createServer(app)
-  , gameServer = new colyseus.Server({server: server})
-
-gameServer.register('chat_room', require('./rooms/chat_room'))
 
 server.listen(config.server.port, function (err) {
 	if (err) {
